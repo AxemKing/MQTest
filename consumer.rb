@@ -6,7 +6,7 @@ conn = Bunny.new(hostname: '192.168.0.7')
 conn.start
 
 ch = conn.create_channel
-q = ch.queue("hello_durable3", durable: true)
+q = ch.queue("hello")
 
 q.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
   body = body.strip
