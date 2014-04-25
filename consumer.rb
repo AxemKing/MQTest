@@ -8,7 +8,4 @@ q = ch.queue("hello")
 
 q.subscribe(:block => true) do |delivery_info, properties, body|
   puts " [x] Received #{body}"
-
-  # cancel the consumer to exit
-  delivery_info.consumer.cancel
 end
