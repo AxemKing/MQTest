@@ -8,8 +8,9 @@ conn.start
 ch = conn.create_channel
 q = ch.queue("hello")
 
-q.subscribe(:block => true) do |delivery_info, properties, body|
+q.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
   body = body.strip
   pp " [x] Received #{body}"
   pp YAML::load(body)
+  ch.ack(delivery_info.delivery_tag)
 end
