@@ -6,11 +6,11 @@ require 'thwait'
 conn = Bunny.new(hostname: 'ME')
 conn.start
 
-ch = conn.create_channel
 threads = []
 stop = false
 
 threads << Thread.new do
+	ch = conn.create_channel
 	q = ch.queue("", exclusive: true)
 	x = ch.fanout("hello")
 	q.bind(x)
