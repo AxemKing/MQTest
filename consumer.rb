@@ -11,7 +11,8 @@ q = ch.queue("", exclusive: true)
 x = ch.fanout("hello")
 q.bind(x)
 
-q2 = ch.queue("hello")
+ch2 = conn.create_channel
+q2 = ch2.queue("hello")
 
 threads = []
 stop = false
@@ -42,4 +43,5 @@ rescue Interrupt => e
 	stop = true
 end
 ch.close
+ch2.close
 conn.close
