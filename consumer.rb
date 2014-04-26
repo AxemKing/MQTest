@@ -6,6 +6,8 @@ require 'thwait'
 conn = Bunny.new(hostname: 'ME')
 conn.start
 
+mutex = Mutex.new
+
 threads = []
 stop = false
 
@@ -15,9 +17,10 @@ threads << Thread.new do
 	x = ch.fanout("logs")
 	q.bind(x)
 	
-	q.subscribe(block:  true) do |delivery_info, properties, body|
-		pp " [x] Received log: #{body}"
-		ch.ack(delivery_info.delivery_tag)
+	q.subscribe(block: true) do |delivery_info, properties, body|
+		mutex.synchronize do
+			pp " [x] Received log: #{body}"
+		end
 		
 		delivery_info.consumer.cancel if stop
 	end
@@ -30,7 +33,9 @@ threads << Thread.new do
 	
 	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
 		body = body.strip
-		pp YAML::load(body)
+		mutex.synchronize do
+			pp YAML::load(body)
+		end
 		ch2.ack(delivery_info.delivery_tag)
 		
 		delivery_info.consumer.cancel if stop
@@ -39,8 +44,8 @@ threads << Thread.new do
 end
 
 begin
-	ThreadsWait.all_waits(threads)
+	threads.each do |thread| thread.join end
 rescue Interrupt => e
-	stop = true
 end
+stop = true
 conn.close
