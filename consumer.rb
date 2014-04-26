@@ -11,6 +11,8 @@ q = ch.queue("", exclusive: true)
 x = ch.fanout("hello")
 q.bind(x)
 
+q2 = ch.queue("hello")
+
 threads = []
 stop = false
 
@@ -23,8 +25,6 @@ threads << Thread.new do
 		delivery_info.consumer.cancel if stop
 	end
 end
-
-q2 = ch.queue("hello")
 
 threads << Thread.new do
 	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
