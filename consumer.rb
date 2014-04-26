@@ -31,7 +31,7 @@ threads << Thread.new do
 	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
 		body = body.strip
 		pp YAML::load(body)
-		ch.ack(delivery_info.delivery_tag)
+		ch2.ack(delivery_info.delivery_tag)
 		
 		delivery_info.consumer.cancel if stop
 	end
