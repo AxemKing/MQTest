@@ -12,35 +12,36 @@ x = ch.fanout("hello")
 q.bind(x)
 
 threads = []
+stop = false
 
 threads << Thread.new do
-	begin
-	  q.subscribe(block:  true) do |delivery_info, properties, body|
+	q.subscribe(block:  true) do |delivery_info, properties, body|
 		body = body.strip
 		pp " [x] Received log: #{body}"
 		pp YAML::load(body)
 		ch.ack(delivery_info.delivery_tag)
-	  end
-	rescue Interrupt => e
-	  ch.close
+		
+		delivery_info.consumer.cancel if stop
 	end
 end
 
-ch2 = conn.create_channel
-q2 = ch2.queue("true")
+q2 = ch.queue("true")
 
 threads << Thread.new do
-	begin
-	  q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
+	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
 		body = body.strip
 		pp " [x] Received #{body}"
 		pp YAML::load(body)
-		ch2.ack(delivery_info.delivery_tag)
-	  end
-	rescue Interrupt => e
-	  ch2.close
+		ch.ack(delivery_info.delivery_tag)
+		
+		delivery_info.consumer.cancel if stop
 	end
 end
 
-ThreadsWait.all_waits(threads)
+begin
+	ThreadsWait.all_waits(threads)
+rescue Interrupt => e
+	stop = true
+end
+ch.close
 conn.close
