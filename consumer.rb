@@ -2,7 +2,7 @@ require 'bunny'
 require 'yaml'
 require 'pp'
 
-conn = Bunny.new(hostname: '192.168.0.7')
+conn = Bunny.new(hostname: 'ME')
 conn.start
 
 ch = conn.create_channel
