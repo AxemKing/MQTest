@@ -18,7 +18,6 @@ threads << Thread.new do
 	q.subscribe(block:  true) do |delivery_info, properties, body|
 		body = body.strip
 		pp " [x] Received log: #{body}"
-		pp YAML::load(body)
 		ch.ack(delivery_info.delivery_tag)
 		
 		delivery_info.consumer.cancel if stop
@@ -30,7 +29,6 @@ q2 = ch.queue("hello")
 threads << Thread.new do
 	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
 		body = body.strip
-		pp " [x] Received #{body}"
 		pp YAML::load(body)
 		ch.ack(delivery_info.delivery_tag)
 		
