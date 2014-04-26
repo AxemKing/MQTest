@@ -12,7 +12,7 @@ stop = false
 threads << Thread.new do
 	ch = conn.create_channel
 	q = ch.queue("", exclusive: true)
-	x = ch.fanout("hello")
+	x = ch.fanout("logs")
 	q.bind(x)
 	
 	q.subscribe(block:  true) do |delivery_info, properties, body|
