@@ -25,7 +25,7 @@ threads << Thread.new do
 	end
 end
 
-q2 = ch.queue("true")
+q2 = ch.queue("hello")
 
 threads << Thread.new do
 	q2.subscribe(ack: true, block:  true) do |delivery_info, properties, body|
