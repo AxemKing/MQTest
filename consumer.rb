@@ -46,6 +46,7 @@ end
 begin
 	threads.each do |thread| thread.join end
 rescue Interrupt => e
+	threads.each do |thread| thread.join end
 end
 stop = true
 conn.close

@@ -1,0 +1,17 @@
+Server starting and management:
+
+export RABBITMQ_SERVER_START_ARGS="-name rabbit@`hostname` -setcookie rabbit"
+rabbitmq-server -detached
+export RABBITMQ_CTL_ERL_ARGS="-name rabbitmqctl@`hostname` -setcookie rabbit"
+rabbitmqctl start_app
+
+Installation and usage of management plugin:
+
+export RABBITMQ_CTL_ERL_ARGS="-name rabbitmqctl@`hostname` -setcookie rabbit"
+rabbitmqctl stop
+rabbitmq-plugins enable rabbitmq_management
+export RABBITMQ_SERVER_START_ARGS="-name rabbit@`hostname` -setcookie rabbit"
+rabbitmq-server -detached
+rabbitmqctl start_app
+
+The interface runs on either port 55672 or 15672
