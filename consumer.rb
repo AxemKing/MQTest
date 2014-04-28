@@ -17,13 +17,10 @@ class ConsumerQueue
 
 	def consume
 		@mutex.synchronize do
-			@queue.pop
-		end
-	end
-
-	def empty?
-		@mutex.synchronize do
-			@queue.empty?
+			while !@queue.empty?
+				item = @queue.pop
+				yield item
+			end
 		end
 	end
 end
@@ -33,25 +30,21 @@ class Consumer
 		@ch = bunny_connection.create_channel
 		@q = @ch.queue("hello")
 		@do_ack = false
-		@mutex = Mutex.new
 		@queue = ConsumerQueue.new
 	end
-
+	
 	def consume
-		@q.subscribe(ack: true, block: true) do |delivery_info, properties, body|
+		last_tag = nil
+		@q.subscribe(ack: true, block: false) do |delivery_info, properties, body|
 			@queue.publish(body)
-			if @do_ack
-				@ch.ack(delivery_info.delivery_tag, true)
-				@mutex.synchronize do
-					@do_ack = false
-				end
-			end
+			last_tag = delivery_info.delivery_tag
 		end
-	end
-
-	def ack
-		@mutex.synchronize do
-			@do_ack = true
+		while true
+			sleep 0.1
+			if last_tag
+				@ch.ack(last_tag, true)
+				last_tag = nil
+			end
 		end
 	end
 
@@ -65,18 +58,18 @@ conn.start
  
 consumer = Consumer.new(conn)
 
-threads = []
-threads << Thread.new do
+Thread.new do
 	while true
+		sleep 1
 		consumer.with_queue do |queue|
-			if !queue.empty?
-				while !queue.empty? do
-					puts "consuming"
-					queue.consume
-				end
+			queue.consume do
 			end
-			consumer.ack
 		end
 	end
 end
+
 consumer.consume
+
+while true do
+	sleep 1
+end
