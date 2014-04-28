@@ -28,6 +28,7 @@ end
 class Consumer
 	def initialize(bunny_connection)
 		@ch = bunny_connection.create_channel
+		@ch.prefetch(1000)
 		@q = @ch.queue("hello")
 		@do_ack = false
 		@queue = ConsumerQueue.new
@@ -41,11 +42,19 @@ class Consumer
 		end
 		while true
 			sleep 0.1
-			if last_tag
+			if @do_ack && last_tag
 				@ch.ack(last_tag, true)
 				last_tag = nil
 			end
 		end
+	end
+
+	def ack
+		@do_ack = true
+	end
+
+	def unack
+		@do_ack = false
 	end
 
 	def with_queue
@@ -61,10 +70,12 @@ consumer = Consumer.new(conn)
 Thread.new do
 	while true
 		sleep 1
+		consumer.unack
 		consumer.with_queue do |queue|
 			queue.consume do
 			end
 		end
+		consumer.ack
 	end
 end
 
