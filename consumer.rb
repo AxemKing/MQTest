@@ -7,11 +7,14 @@ class ConsumerQueue
 	def initialize
 		@queue = Queue.new
 		@mutex = Mutex.new
+		@last_tag = -1
 	end
 
-	def publish(data)
+	def publish(buffer)
 		@mutex.synchronize do
-			@queue.push(data)
+			buffer.each do |item|
+				@queue.push(item)
+			end
 		end
 	end
 
@@ -19,9 +22,14 @@ class ConsumerQueue
 		@mutex.synchronize do
 			while !@queue.empty?
 				item = @queue.pop
-				yield item
+				yield item[:data]
+				@last_tag = item[:tag]
 			end
 		end
+	end
+
+	def last_tag
+		@last_tag
 	end
 end
 
@@ -30,31 +38,38 @@ class Consumer
 		@ch = bunny_connection.create_channel
 		@ch.prefetch(1000)
 		@q = @ch.queue("hello")
-		@do_ack = false
+		@ack_tag = -1
 		@queue = ConsumerQueue.new
 	end
 	
 	def consume
-		last_tag = nil
+		mutex = Mutex.new
+		queue_buf = []
+		last_tag = -1
 		@q.subscribe(ack: true, block: false) do |delivery_info, properties, body|
-			@queue.publish(body)
-			last_tag = delivery_info.delivery_tag
+			mutex.synchronize do
+				queue_buf << { data: body, tag: delivery_info.delivery_tag }
+			end
 		end
 		while true
 			sleep 0.1
-			if @do_ack && last_tag
-				@ch.ack(last_tag, true)
-				last_tag = nil
+			mutex.synchronize do
+				@queue.publish(queue_buf)
+				queue_buf = []
+			end
+			if @ack_tag > last_tag
+				@ch.ack(@ack_tag, true)
+				last_tag = @ack_tag
 			end
 		end
 	end
 
-	def ack
-		@do_ack = true
+	def ack(tag)
+		@ack_tag = tag
 	end
 
-	def unack
-		@do_ack = false
+	def ack_tag
+		@ack_tag
 	end
 
 	def with_queue
@@ -69,13 +84,21 @@ consumer = Consumer.new(conn)
 
 Thread.new do
 	while true
-		sleep 1
-		consumer.unack
+		sleep 0.1
 		consumer.with_queue do |queue|
-			queue.consume do
+			queue.consume do |data|
 			end
 		end
-		consumer.ack
+	end
+end
+
+Thread.new do
+	while true
+		sleep 0.1
+		consumer.with_queue do |queue|
+			last_tag = queue.last_tag
+			consumer.ack(last_tag)
+		end
 	end
 end
 
