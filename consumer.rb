@@ -87,6 +87,8 @@ Thread.new do
 		sleep 0.1
 		consumer.with_queue do |queue|
 			queue.consume do |data|
+				data = data.strip
+				cls = YAML::load(data)
 			end
 		end
 	end
