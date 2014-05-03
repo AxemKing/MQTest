@@ -1,6 +1,6 @@
 require "bunny"
 
-conn = Bunny.new(hostname: "ME")
+conn = Bunny.new(hostname: "ME", user: "admin", pass: "admin")
 conn.start
 ch = conn.create_channel
 q = ch.queue("hello")

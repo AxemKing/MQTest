@@ -77,7 +77,7 @@ class Consumer
 	end
 end	
 
-conn = Bunny.new(hostname: 'ME')
+conn = Bunny.new(hostname: 'ME', user: "admin", pass: "admin")
 conn.start
  
 consumer = Consumer.new(conn)
