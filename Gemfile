@@ -1,4 +1,4 @@
 source 'http://rubygems.org'
 
 gem 'bunny'
-gem 'ox'
+gem 'march_hare'
